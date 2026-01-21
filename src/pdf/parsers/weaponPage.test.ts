@@ -29,9 +29,11 @@ test("rare weapon parses generated", () => {
 			const pageTokens: Token[] = [
 				imageToken({ width: 0, height: 0 } as Image),
 				imageToken({ width: 0, height: 0 } as Image),
-				stringToken(""),
 				stringToken(`SAMPLE RARE ${category} WEAPONS`),
-				stringToken(""),
+				stringToken("WEAPON"),
+				stringToken("COST"),
+				stringToken("ACCURACY"),
+				stringToken("DAMAGE"),
 				...flatMap(d, (m) => [
 					imageToken(m.image),
 					stringToken(m.name),

@@ -100,7 +100,7 @@ test("parses generated", () => {
 				...flatMap(cs, (b) => [
 					imageToken(b.image),
 					stringToken(b.name),
-					stringToken(`Lv ${b.level}`),
+					stringToken(`Lv. ${b.level}`),
 					stringToken("w", "XFYKOE+Wingdings-Regular"),
 					stringToken(b.type),
 					...b.description.map((s) => stringToken(s, "FBDLWO+PTSans-Narrow")),

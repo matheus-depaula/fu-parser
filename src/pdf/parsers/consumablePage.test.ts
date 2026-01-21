@@ -29,8 +29,9 @@ test("parses generated", () => {
 		fc.property(consumableDataGen, (cs): void => {
 			const pageTokens: Token[] = [
 				imageToken({ width: 0, height: 0 } as Image),
-				imageToken({ width: 0, height: 0 } as Image),
-				stringToken(""),
+				stringToken("ITEM"),
+				stringToken("CUSTO DE PI"),
+				stringToken("EFEITO"),
 				...flatMap(cs, ([h, d]) => [
 					stringToken(h),
 					...flatMap(d, (m) => [
@@ -40,7 +41,6 @@ test("parses generated", () => {
 						...m.description.map((s) => stringToken(s, "FBDLWO+PTSans-Narrow")),
 					]),
 				]),
-				stringToken(""),
 				watermark,
 			];
 			const parses = consumablesPage([pageTokens, 0]);

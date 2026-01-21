@@ -22,6 +22,16 @@ export const isStat = (s: string): s is Stat => {
 	return (STATS as readonly string[]).includes(s);
 };
 
+export const normalizeText = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+export const normalizeDescription = (value: string) => {
+	const normalized = normalizeText(value).replace(/\s+/g, " ").trim();
+	if (normalized === "no quality." || normalized === "sem caracteristicas especiais.") {
+		return "";
+	}
+	return value;
+};
+
 export type DamageType = (typeof DAMAGE_TYPES)[number];
 export const DAMAGE_TYPES = ["physical", "air", "bolt", "dark", "earth", "fire", "ice", "light", "poison"] as const;
 

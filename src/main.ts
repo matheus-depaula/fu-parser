@@ -45,7 +45,7 @@
  */
 
 import { FultimatorImportApplication } from "./apps/import-fultimator";
-import { bookTypes, ImportPDFApplication } from "./apps/import-pdf";
+import { bookTypes, languages, ImportPDFApplication } from "./apps/import-pdf";
 
 Hooks.on("renderSettings", async (_app, html) => {
 	if (!game.user.isGM) {
@@ -74,7 +74,16 @@ Hooks.on("renderSettings", async (_app, html) => {
 
 		template.content.querySelector("[data-action=openPdfImporter]")!.addEventListener("click", () => {
 			const application = new ImportPDFApplication(
-				{ pdfPath: "", imagePath: "", bookType: "FUCR", parseResults: [], inProgress: false, bookTypes },
+				{
+					pdfPath: "",
+					imagePath: "",
+					bookType: "FUCR",
+					language: "en",
+					parseResults: [],
+					inProgress: false,
+					bookTypes,
+					languages
+				},
 				{
 					width: 450,
 					height: 600,
@@ -114,7 +123,16 @@ Hooks.on("renderSettings", async (_app, html) => {
 		importPDFButton.append("Import PDF");
 		importPDFButton.addEventListener("click", () => {
 			const application = new ImportPDFApplication(
-				{ pdfPath: "", imagePath: "", bookType: "FUCR", parseResults: [], inProgress: false, bookTypes },
+				{
+					pdfPath: "",
+					imagePath: "",
+					bookType: "FUCR",
+					language: "en",
+					parseResults: [],
+					inProgress: false,
+					bookTypes,
+					languages
+				},
 				{
 					width: 450,
 					height: 600,

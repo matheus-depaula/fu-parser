@@ -35,24 +35,33 @@ const parsePdf = async (pdfPath: string, bookType: BookType): Promise<[ParseResu
 
 export type BookType = (typeof BOOK_TYPES)[number];
 export const BOOK_TYPES = ["FUCR", "FUHF", "FUTF", "FUNF"] as const;
-export const bookTypes = {
+export const bookTypes: Record<BookType, string> = {
 	FUCR: "Core Rulebook",
 	FUHF: "High Fantasy Atlas",
 	FUTF: "Techno Fantasy Atlas",
 	FUNF: "Natural Fantasy Atlas",
 };
 
+export type Language = (typeof LANGUAGES)[number];
+export const LANGUAGES = ["en", "pt-br"] as const;
+export const languages: Record<Language, string> = {
+	en: "English",
+	"pt-br": "Português (Brasil)",
+};
+
 type ImportPDFSubmissionData = {
 	pdfPath: string;
 	imagePath: string;
 	bookType: BookType;
+	language: Language;
 };
 
 type ImportPDFData = ImportPDFSubmissionData & {
 	parseResults: ParseResult[];
 	destroy?: () => Promise<void>;
 	inProgress: boolean;
-	bookTypes: Record<BookType, string>;
+	bookTypes: typeof bookTypes;
+	languages: typeof languages;
 };
 
 export class ImportPDFApplication extends FormApplication<ImportPDFData> {
@@ -60,10 +69,15 @@ export class ImportPDFApplication extends FormApplication<ImportPDFData> {
 		if (data.imagePath != this.object.imagePath) {
 			this.object.imagePath = data.imagePath;
 		}
-		if (data.pdfPath != this.object.pdfPath || data.bookType != this.object.bookType) {
+		if (
+			data.pdfPath != this.object.pdfPath ||
+			data.bookType != this.object.bookType ||
+			data.language != this.object.language
+		) {
 			this.cleanupPDFResources();
 			this.object.pdfPath = data.pdfPath;
 			this.object.bookType = data.bookType;
+			this.object.language = data.language;
 			this.render();
 			const [results, destroy] = await parsePdf(this.object.pdfPath, this.object.bookType);
 			this.object.parseResults = results;

@@ -111,6 +111,14 @@ export const textWithFont = (s: string, fonts: RegExp[]) =>
 		`text: "${s}" with fonts ${fonts}`,
 	) as Parser<StringToken>;
 
+export const optionalStar: Parser<null> = (ptr) => {
+	const token = nextToken(ptr);
+	if (token && isStringToken(token) && (token.string === "W" || token.string === "★")) {
+		return success(null)(inc(ptr));
+	}
+	return success(null)(ptr);
+};
+
 type MapParsers<U extends unknown[]> = { [Property in keyof U]: Parser<U[Property]> };
 
 export const seq = <T, U extends unknown[]>(p: Parser<T>, ...rst: MapParsers<U>): Parser<[T, ...U]> => {
@@ -137,8 +145,8 @@ export const descriptionLine = fmap(
 	satisfy(
 		(t) =>
 			isStringToken(t) &&
-			[/PTSans-Narrow$/, /PTSans-NarrowBold$/, /Heydings-Icons$/, /KozMinPro-Regular$/].some((r) =>
-				r.test(t.font),
+			[/PTSans-Narrow$/, /PTSans-NarrowBold$/, /Heydings-Icons$/, /KozMinPro-Regular$/, /Type3$/, /FabulaUltimaicons-Regular$/].some(
+				(r) => r.test(t.font),
 			) &&
 			!/^Opportunity:/.test(t.string),
 		"description line",
@@ -165,19 +173,38 @@ const bonus = alt(
 	success(0),
 );
 
+const STAT_ALIASES: Record<string, Stat> = {
+	DES: "DEX",
+	VIG: "MIG",
+	AST: "INS",
+	VON: "WLP",
+};
+
+const normalizeStat = (s: string): Stat | null => {
+	if (isStat(s)) {
+		return s;
+	}
+	return STAT_ALIASES[s] ?? null;
+};
+
 const statsForAccuracy: Parser<[Stat, Stat]> = (ptr: PTR) => {
 	const token = nextToken(ptr);
 	if (token && isStringToken(token) && token.string.length == 9) {
 		const primary = token.string.slice(0, 3);
 		const secondary = token.string.slice(-3);
-		if (isStat(primary) && isStat(secondary)) {
-			return success<[Stat, Stat]>([primary, secondary])(inc(ptr));
+		const normalizedPrimary = normalizeStat(primary);
+		const normalizedSecondary = normalizeStat(secondary);
+		if (normalizedPrimary && normalizedSecondary) {
+			return success<[Stat, Stat]>([normalizedPrimary, normalizedSecondary])(inc(ptr));
 		}
 	}
 	return fail<[Stat, Stat]>("Accuracy attributes")(ptr);
 };
+const openBracket = alt(text("【"), text("("));
+const closeBracket = alt(text("】"), text(")"));
+
 export const accuracy = fmap(
-	then(kl(kr(text("【"), statsForAccuracy), text("】")), bonus),
+	then(kl(kr(openBracket, statsForAccuracy), closeBracket), bonus),
 	([[primary, secondary], bonus]) => {
 		return { primary, secondary, bonus };
 	},
@@ -185,22 +212,44 @@ export const accuracy = fmap(
 
 const statsForDamage: Parser<number> = (ptr: PTR) => {
 	const token = nextToken(ptr);
-	if (token && isStringToken(token) && /HR \+ \d+/.test(token.string)) {
-		return success(Number(token.string.slice(5)))(inc(ptr));
+	if (token && isStringToken(token) && /^(HR|RA) \+ \d+$/.test(token.string)) {
+		const value = Number(token.string.split(" + ")[1]);
+		return success(value)(inc(ptr));
 	}
 	return fail<number>("Damage")(ptr);
 };
-export const damage = kl(kr(text("【"), statsForDamage), text("】"));
+export const damage = kl(kr(openBracket, statsForDamage), closeBracket);
+
+export const normalizeText = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const DAMAGE_TYPE_ALIASES: Record<string, DamageType> = {
+	fisico: "physical",
+	ar: "air",
+	raio: "bolt",
+	trevas: "dark",
+	terra: "earth",
+	fogo: "fire",
+	gelo: "ice",
+	luz: "light",
+	veneno: "poison",
+};
 
 //TODO: Parse damage type instead of just any string
-export const damageType: Parser<DamageType> = fmap(many1(str), (ts) => ts.join("") as DamageType);
+export const damageType: Parser<DamageType> = fmap(many1(str), (ts) => {
+	const raw = ts.join("");
+	const normalized = normalizeText(raw);
+	return (DAMAGE_TYPE_ALIASES[normalized] ?? normalized) as DamageType;
+});
 export const hands: Parser<Handed> = alt(
-	fmap(text("One-handed"), () => "one-handed"),
-	fmap(text("Two-handed"), () => "two-handed"),
+	alt(fmap(text("One-handed"), () => "one-handed"), fmap(text("Two-handed"), () => "two-handed")),
+	alt(fmap(text("Uma mão"), () => "one-handed"), fmap(text("Duas mãos"), () => "two-handed")),
 );
 export const melee: Parser<Distance> = alt(
-	fmap(text("Melee"), () => "melee"),
-	fmap(text("Ranged"), () => "ranged"),
+	alt(fmap(text("Melee"), () => "melee"), fmap(text("Ranged"), () => "ranged")),
+	alt(
+		fmap(text("Corpo a corpo"), () => "melee"),
+		alt(fmap(text("À distância"), () => "ranged"), fmap(text("A distância"), () => "ranged")),
+	),
 );
 
 export const martial = alt(
@@ -211,6 +260,9 @@ export const martial = alt(
 export const cost = fmap(strWithFont([/PTSans-Narrow$/]), convertCosts);
 
 export const dashOrNumber = (errorMsg: string) =>
-	fmap(matches(/^((\+|-)?[0-9]+)|-$/, errorMsg), (s: string) => (s === "-" ? 0 : Number(s)));
+	fmap(matches(/^((\+|[-–—−])?[0-9]+)|[-–—−]$/, errorMsg), (s: string) => {
+		const normalized = s.replace(/[–—−]/g, "-");
+		return normalized === "-" ? 0 : Number(normalized);
+	});
 
 export const watermark = strWithFont([/Helvetica$/]);

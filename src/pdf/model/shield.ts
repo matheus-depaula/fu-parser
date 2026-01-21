@@ -1,4 +1,4 @@
-import { Image } from "./common";
+import { Image, normalizeDescription } from "./common";
 import { FUItem } from "../../external/project-fu";
 
 export type Shield = {
@@ -20,7 +20,7 @@ export function shieldToFuItem(data: Shield, imagePath: string, folderId: string
 		folder: folderId,
 		system: {
 			isMartial: { value: data.martial },
-			description: data.description === "No Quality." ? "" : data.description,
+			description: normalizeDescription(data.description),
 			cost: { value: data.cost },
 			source: { value: source },
 			def: { value: data.def },

@@ -28,7 +28,11 @@ test("parses generated", () => {
 			const pageTokens: Token[] = [
 				imageToken({ width: 0, height: 0 } as Image),
 				imageToken({ width: 0, height: 0 } as Image),
-				stringToken(""),
+				stringToken("ARMOR"),
+				stringToken("COST"),
+				stringToken("DEF"),
+				stringToken("M.DEF"),
+				stringToken("INIT"),
 
 				...flatMap(data, (m) => [
 					imageToken(m.image),

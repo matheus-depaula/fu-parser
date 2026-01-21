@@ -1,5 +1,15 @@
-import { Accuracy, DamageType, Distance, Handed, Image, STAT_MAPPING, WeaponCategory } from "./common";
-import { FUItem } from "../../external/project-fu";
+import {
+	Accuracy,
+	DamageType,
+	Distance,
+	Handed,
+	Image,
+	normalizeDescription,
+	normalizeText,
+	STAT_MAPPING,
+	WeaponCategory,
+} from "./common";
+import { CATEGORY, FUItem } from "../../external/project-fu";
 
 export type Weapon = {
 	image: Image;
@@ -15,6 +25,38 @@ export type Weapon = {
 	description: string;
 };
 
+const normalizeDamageType = (value: DamageType): DamageType => {
+	const normalized = normalizeText(value);
+	const map: Record<string, DamageType> = {
+		fisico: "physical",
+		ar: "air",
+		raio: "bolt",
+		trevas: "dark",
+		terra: "earth",
+		fogo: "fire",
+		gelo: "ice",
+		luz: "light",
+		veneno: "poison",
+	};
+	return map[normalized] ?? (value as DamageType);
+};
+const normalizeCategory = (value: WeaponCategory): CATEGORY => {
+	const normalized = normalizeText(value);
+	const map: Record<string, CATEGORY> = {
+		arcane: "arcane",
+		bow: "bow",
+		brawling: "brawling",
+		dagger: "dagger",
+		firearm: "firearm",
+		flail: "flail",
+		heavy: "heavy",
+		spear: "spear",
+		sword: "sword",
+		thrown: "thrown",
+	};
+	return map[normalized] ?? "arcane";
+};
+
 export function weaponToFuItem(data: Weapon, imagePath: string, folderId: string, source: string): FUItem {
 	return {
 		type: "weapon" as const,
@@ -23,7 +65,7 @@ export function weaponToFuItem(data: Weapon, imagePath: string, folderId: string
 		folder: folderId,
 		system: {
 			isMartial: { value: data.martial },
-			description: data.description === "No Quality." ? "" : data.description,
+			description: normalizeDescription(data.description),
 			cost: { value: data.cost },
 			attributes: {
 				primary: { value: STAT_MAPPING[data.accuracy.primary] },
@@ -32,9 +74,9 @@ export function weaponToFuItem(data: Weapon, imagePath: string, folderId: string
 			accuracy: { value: data.accuracy.bonus },
 			damage: { value: data.damage },
 			type: { value: data.melee },
-			category: { value: data.category },
+			category: { value: normalizeCategory(data.category) },
 			hands: { value: data.hands },
-			damageType: { value: data.damageType },
+			damageType: { value: normalizeDamageType(data.damageType) },
 			source: { value: source },
 			isBehavior: false,
 			weight: { value: 1 },
