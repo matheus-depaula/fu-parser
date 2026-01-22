@@ -121,8 +121,18 @@ const ELEMENTS_MAPPING: Record<string, DamageType> = {
 	veneno: "poison",
 };
 
-const normalizeDamageTypeLabel = (value: string) =>
-	normalizeText(value).replace(/^(de|do|da|dos|das)\s+/, "");
+const normalizeDamageTypeLabel = (value: string) => {
+	const normalized = normalizeText(value).trim();
+	const withSpace = normalized.replace(/^(de|do|da|dos|das)\s+/, "");
+	if (withSpace !== normalized) {
+		return withSpace;
+	}
+	const compact = normalized.replace(/^(de|do|da|dos|das)/, "");
+	if (compact !== normalized && Object.prototype.hasOwnProperty.call(ELEMENTS_MAPPING, compact)) {
+		return compact;
+	}
+	return normalized;
+};
 
 const mapElementToDamageType = (value: string) => {
 	const normalized = normalizeDamageTypeLabel(value);

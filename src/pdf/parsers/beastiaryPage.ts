@@ -295,7 +295,8 @@ const BEAST_DURATION_MAP: Record<string, string> = {
 	Cena: "scene",
 };
 
-const mapBeastDuration = (value: string) => BEAST_DURATION_MAP[value] ?? value.toLowerCase();
+const mapBeastDuration = (value: string) =>
+	Object.prototype.hasOwnProperty.call(BEAST_DURATION_MAP, value) ? BEAST_DURATION_MAP[value] : value.toLowerCase();
 
 const maybeSpellAccuracy: Parser<Accuracy | null> = (ptr) => {
 	const token = nextToken(ptr);

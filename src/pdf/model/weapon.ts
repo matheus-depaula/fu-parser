@@ -26,7 +26,15 @@ export type Weapon = {
 };
 
 const normalizeDamageType = (value: DamageType): DamageType => {
-	const normalized = normalizeText(value).replace(/^(de|do|da|dos|das)\s+/, "");
+	const normalized = normalizeText(value).trim();
+	const withSpace = normalized.replace(/^(de|do|da|dos|das)\s+/, "");
+	const compact = normalized.replace(/^(de|do|da|dos|das)/, "");
+	const stripped =
+		withSpace !== normalized
+			? withSpace
+			: compact !== normalized && /^(physical|air|bolt|dark|earth|fire|ice|light|poison|fisico|ar|raio|trevas|terra|fogo|gelo|luz|veneno)$/.test(compact)
+				? compact
+				: normalized;
 	const map: Record<string, DamageType> = {
 		fisico: "physical",
 		ar: "air",
@@ -38,7 +46,7 @@ const normalizeDamageType = (value: DamageType): DamageType => {
 		luz: "light",
 		veneno: "poison",
 	};
-	return map[normalized] ?? (value as DamageType);
+	return map[stripped] ?? (stripped as DamageType);
 };
 const normalizeCategory = (value: WeaponCategory): CATEGORY => {
 	const normalized = normalizeText(value);

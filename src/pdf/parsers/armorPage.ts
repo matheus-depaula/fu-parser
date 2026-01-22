@@ -31,9 +31,7 @@ const init = dashOrNumber("initiative");
 
 const armorDescription = fmap(
 	then(
-		many(
-			strWithFont([/PTSans-Narrow$/, /PTSans-NarrowBold$/, /Heydings-Icons$/, /KozMinPro-Regular$/, /Type3$/]),
-		),
+		many(strWithFont([/PTSans-Narrow$/, /PTSans-NarrowBold$/, /Heydings-Icons$/, /KozMinPro-Regular$/, /Type3$/])),
 		descriptionEnd,
 	),
 	([z, s]) => prettifyStrings([...z, s]),
@@ -48,10 +46,7 @@ const armorParser: Parser<Armor> = fmap(
 
 const armorHeaderTitle = alt(
 	alt(text("BASIC ARMORS"), text("ARMADURAS BÁSICAS")),
-	alt(
-		then(text("ARMADURAS E ESCUDOS BÁSICOS"), text("ARMADURAS BÁSICAS")),
-		text("EXEMPLOS DE ARMADURAS RARAS"),
-	),
+	alt(then(text("ARMADURAS E ESCUDOS BÁSICOS"), text("ARMADURAS BÁSICAS")), text("EXEMPLOS DE ARMADURAS RARAS")),
 );
 const armorHeaderColumns = seq(
 	alt(alt(text("ARMOR"), text("ARMADURA")), text("ITEM")),

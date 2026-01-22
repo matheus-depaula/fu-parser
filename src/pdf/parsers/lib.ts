@@ -113,7 +113,11 @@ export const textWithFont = (s: string, fonts: RegExp[]) =>
 
 export const optionalStar: Parser<null> = (ptr) => {
 	const token = nextToken(ptr);
-	if (token && isStringToken(token) && (token.string === "W" || token.string === "★")) {
+	if (
+		token &&
+		isStringToken(token) &&
+		(token.string === "★" || (token.string === "W" && /Wingdings-Regular$/.test(token.font)))
+	) {
 		return success(null)(inc(ptr));
 	}
 	return success(null)(ptr);
@@ -145,9 +149,14 @@ export const descriptionLine = fmap(
 	satisfy(
 		(t) =>
 			isStringToken(t) &&
-			[/PTSans-Narrow$/, /PTSans-NarrowBold$/, /Heydings-Icons$/, /KozMinPro-Regular$/, /Type3$/, /FabulaUltimaicons-Regular$/].some(
-				(r) => r.test(t.font),
-			) &&
+			[
+				/PTSans-Narrow$/,
+				/PTSans-NarrowBold$/,
+				/Heydings-Icons$/,
+				/KozMinPro-Regular$/,
+				/Type3$/,
+				/FabulaUltimaicons-Regular$/,
+			].some((r) => r.test(t.font)) &&
 			!/^Opportunity:/.test(t.string),
 		"description line",
 	) as Parser<StringToken>,
@@ -220,11 +229,29 @@ const statsForDamage: Parser<number> = (ptr: PTR) => {
 };
 export const damage = kl(kr(openBracket, statsForDamage), closeBracket);
 
-export const normalizeText = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+export const normalizeText = (value: string) =>
+	value
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "");
 
 const normalizeDamageTypeText = (value: string) => {
 	const normalized = normalizeText(value).trim();
-	return normalized.replace(/^(de|do|da|dos|das)\s+/, "");
+	const withSpace = normalized.replace(/^(de|do|da|dos|das)\s+/, "");
+	if (withSpace !== normalized) {
+		return withSpace;
+	}
+	const compact = normalized.replace(/^(de|do|da|dos|das)/, "");
+	if (compact !== normalized) {
+		const isKnown =
+			/^(physical|air|bolt|dark|earth|fire|ice|light|poison|fisico|ar|raio|trevas|terra|fogo|gelo|luz|veneno)$/.test(
+				compact,
+			);
+		if (isKnown) {
+			return compact;
+		}
+	}
+	return normalized;
 };
 
 const DAMAGE_TYPE_ALIASES: Record<string, DamageType> = {
@@ -246,19 +273,34 @@ export const damageType: Parser<DamageType> = fmap(many1(str), (ts) => {
 	return (DAMAGE_TYPE_ALIASES[normalized] ?? normalized) as DamageType;
 });
 export const hands: Parser<Handed> = alt(
-	alt(fmap(text("One-handed"), () => "one-handed"), fmap(text("Two-handed"), () => "two-handed")),
-	alt(fmap(text("Uma mão"), () => "one-handed"), fmap(text("Duas mãos"), () => "two-handed")),
+	alt(
+		fmap(text("One-handed"), () => "one-handed"),
+		fmap(text("Two-handed"), () => "two-handed"),
+	),
+	alt(
+		fmap(text("Uma mão"), () => "one-handed"),
+		fmap(text("Duas mãos"), () => "two-handed"),
+	),
 );
 export const melee: Parser<Distance> = alt(
-	alt(fmap(text("Melee"), () => "melee"), fmap(text("Ranged"), () => "ranged")),
+	alt(
+		fmap(text("Melee"), () => "melee"),
+		fmap(text("Ranged"), () => "ranged"),
+	),
 	alt(
 		fmap(text("Corpo a corpo"), () => "melee"),
-		alt(fmap(text("À distância"), () => "ranged"), fmap(text("A distância"), () => "ranged")),
+		alt(
+			fmap(text("À distância"), () => "ranged"),
+			fmap(text("A distância"), () => "ranged"),
+		),
 	),
 );
 
 export const martial = alt(
-	fmap(textWithFont("E", [/FnT_BasicShapes1$/]), (_e) => true),
+	alt(
+		fmap(textWithFont("E", [/FnT_BasicShapes1$/, /FabulaUltimaicons-Regular$/, /Type3$/]), (_e) => true),
+		fmap(textWithFont("W", [/Type3$/]), (_e) => true),
+	),
 	success(false),
 );
 

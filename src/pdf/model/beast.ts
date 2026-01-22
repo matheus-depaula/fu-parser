@@ -8,6 +8,7 @@ import {
 	ResistanceMap,
 	Stat,
 	STAT_MAPPING,
+	normalizeText,
 } from "./common";
 import { FUActor, FUItem } from "../../external/project-fu";
 
@@ -61,6 +62,24 @@ export type Beast = {
 		name: string;
 		description: string;
 	}[];
+};
+
+const BEAST_TYPE_MAPPING: Record<string, string> = {
+	elemetal: "elemental",
+	elemental: "elemental",
+	construto: "construct",
+	demonio: "demon",
+	fera: "beast",
+	humanoide: "humanoid",
+	monstro: "monster",
+	"morto-vivo": "undead",
+	"morto vivo": "undead",
+	planta: "plant",
+};
+
+const normalizeBeastType = (value: string) => {
+	const normalized = normalizeText(value).replace(/[–—-]+/g, "-").replace(/\s+/g, " ").trim();
+	return BEAST_TYPE_MAPPING[normalized] ?? normalized;
 };
 
 export function beastToFuActor(
@@ -155,7 +174,7 @@ export function beastToFuActor(
 				magic: { value: 0, bonus: 0 },
 			},
 			traits: { value: b.traits },
-			species: { value: b.type.toLowerCase() },
+			species: { value: normalizeBeastType(b.type) },
 			useEquipment: { value: b.equipment != null },
 			source: { value: source },
 			villain: { value: "" as const },
