@@ -16,7 +16,7 @@ import {
 	PCAccessory,
 } from "../external/fultimator";
 import { ATTR, CATEGORY, FUActor, FUItem, FUActorPC, VehicleFrameFeature } from "../external/project-fu";
-import { DamageType } from "../pdf/model/common";
+import { DamageType, normalizeText } from "../pdf/model/common";
 
 const mapAttribute = (attr: string | undefined): ATTR => {
 	const attrMap: Record<string, ATTR> = {
@@ -100,7 +100,7 @@ const STAT_MAPPING: Record<Attributes, ATTR> = {
 	will: "wlp",
 };
 
-const ELEMENTS_MAPPING: Record<Elements, DamageType> = {
+const ELEMENTS_MAPPING: Record<string, DamageType> = {
 	physical: "physical",
 	wind: "air",
 	bolt: "bolt",
@@ -110,6 +110,23 @@ const ELEMENTS_MAPPING: Record<Elements, DamageType> = {
 	ice: "ice",
 	light: "light",
 	poison: "poison",
+	fisico: "physical",
+	ar: "air",
+	raio: "bolt",
+	trevas: "dark",
+	terra: "earth",
+	fogo: "fire",
+	gelo: "ice",
+	luz: "light",
+	veneno: "poison",
+};
+
+const normalizeDamageTypeLabel = (value: string) =>
+	normalizeText(value).replace(/^(de|do|da|dos|das)\s+/, "");
+
+const mapElementToDamageType = (value: string) => {
+	const normalized = normalizeDamageTypeLabel(value);
+	return ELEMENTS_MAPPING[normalized] ?? "physical";
 };
 
 const lookupAffinity = (affinity?: Affinities) => {
@@ -214,7 +231,7 @@ const importFultimatorWeapon = async (data: PCWeapon) => {
 			accuracy: { value: data.prec },
 			damage: { value: data.damage },
 			type: { value: isRanged ? "ranged" : "melee" },
-			damageType: { value: ELEMENTS_MAPPING[type] },
+			damageType: { value: mapElementToDamageType(type) },
 			description: parseMarkdown(data.quality || ""),
 			isBehavior: false,
 			cost: { value: data.cost },
@@ -303,7 +320,7 @@ const importFultimatorCustomWeapon = async (data: PCCustomWeapon) => {
 
 	// Map damage types
 	const mapDamageType = (type: Elements): DamageType => {
-		return ELEMENTS_MAPPING[type] || "physical";
+		return mapElementToDamageType(type);
 	};
 
 	// Build description from quality and customizations
@@ -2051,7 +2068,7 @@ const importFultimatorPC = async (data: Player, preferCompendium: boolean = true
 				accuracy: { value: weapon.prec },
 				damage: { value: weapon.damage },
 				type: { value: weapon.ranged ? "ranged" : "melee" },
-				damageType: { value: ELEMENTS_MAPPING[type] },
+				damageType: { value: mapElementToDamageType(type) },
 				description: parseMarkdown(weapon.quality || ""),
 				isBehavior: false,
 				cost: { value: weapon.cost },
@@ -2201,7 +2218,7 @@ const importFultimatorPC = async (data: Player, preferCompendium: boolean = true
 		const secondaryRange = customWeapon.secondSelectedRange === "weapon_range_ranged" ? "ranged" : "melee";
 
 		const mapDamageType = (type: Elements): DamageType => {
-			return ELEMENTS_MAPPING[type] || "physical";
+			return mapElementToDamageType(type);
 		};
 
 		// Build description from quality and customizations
@@ -2486,7 +2503,7 @@ const importFultimatorNPC = async (data: Npc) => {
 						(attack.flatdmg ? Number(attack.flatdmg) : 0),
 				},
 				type: { value: attack.range == "distance" ? "ranged" : "melee" },
-				damageType: { value: ELEMENTS_MAPPING[attack.type] },
+				damageType: { value: mapElementToDamageType(attack.type) },
 				quality: { value: "" },
 				isBehavior: false,
 				weight: { value: 1 },
@@ -2520,7 +2537,7 @@ const importFultimatorNPC = async (data: Npc) => {
 						(attack.flatdmg ? Number(attack.flatdmg) : 0),
 				},
 				type: { value: attack.weapon.range == "distance" ? "ranged" : "melee" },
-				damageType: { value: ELEMENTS_MAPPING[type] },
+				damageType: { value: mapElementToDamageType(type) },
 				description: parseMarkdown(attack.special.join(" ")),
 				isBehavior: false,
 				weight: { value: 1 },

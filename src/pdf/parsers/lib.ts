@@ -222,6 +222,11 @@ export const damage = kl(kr(openBracket, statsForDamage), closeBracket);
 
 export const normalizeText = (value: string) => value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+const normalizeDamageTypeText = (value: string) => {
+	const normalized = normalizeText(value).trim();
+	return normalized.replace(/^(de|do|da|dos|das)\s+/, "");
+};
+
 const DAMAGE_TYPE_ALIASES: Record<string, DamageType> = {
 	fisico: "physical",
 	ar: "air",
@@ -237,7 +242,7 @@ const DAMAGE_TYPE_ALIASES: Record<string, DamageType> = {
 //TODO: Parse damage type instead of just any string
 export const damageType: Parser<DamageType> = fmap(many1(str), (ts) => {
 	const raw = ts.join("");
-	const normalized = normalizeText(raw);
+	const normalized = normalizeDamageTypeText(raw);
 	return (DAMAGE_TYPE_ALIASES[normalized] ?? normalized) as DamageType;
 });
 export const hands: Parser<Handed> = alt(

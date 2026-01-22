@@ -26,7 +26,7 @@ export type Weapon = {
 };
 
 const normalizeDamageType = (value: DamageType): DamageType => {
-	const normalized = normalizeText(value);
+	const normalized = normalizeText(value).replace(/^(de|do|da|dos|das)\s+/, "");
 	const map: Record<string, DamageType> = {
 		fisico: "physical",
 		ar: "air",
